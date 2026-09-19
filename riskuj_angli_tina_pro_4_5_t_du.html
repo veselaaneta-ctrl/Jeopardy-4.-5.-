@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riskuj! - Angličtina pro 4.-5. třídu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Fredoka & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Fredoka', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        .risk-card {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 0 rgba(0, 0, 0, 0.25);
+        }
+
+        .risk-card:hover:not(.played) {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .risk-card:active:not(.played) {
+            transform: translateY(2px) scale(0.98);
+            box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .risk-card.played {
+            opacity: 0.35;
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        .modal-animate-in {
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.85) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .pulse-glow {
+            animation: pulseGlow 2s infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px rgba(234, 179, 8, 0.4); }
+            100% { box-shadow: 0 0 30px rgba(234, 179, 8, 0.9); }
+        }
+
+        /* Custom Scrollbar for smaller screens */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="text-white p-2 md:p-6 flex flex-col justify-between min-h-screen">
+
+    <header class="max-w-7xl mx-auto w-full mb-4 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900/80 backdrop-blur border border-slate-700/60 p-4 rounded-2xl shadow-2xl">
+        <div class="flex items-center gap-3">
+            <div class="bg-amber-500 text-slate-900 p-3 rounded-xl font-black text-2xl shadow-lg transform -rotate-3">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold tracking-wide bg-gradient-to-r from-amber-300 via-orange-400 to-yellow-200 bg-clip-text text-transparent">
+                    RISKUJ! <span class="text-xs md:text-sm font-semibold text-sky-400 block md:inline">Angličtina pro 4.-5. třídu</span>
+                </h1>
+                <p class="text-xs text-slate-400">Interaktivní kvízová hra do výuky</p>
+            </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="game.toggleAudio()" id="audioBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-sm font-bold border border-slate-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-volume-high text-amber-400" id="audioIcon"></i>
+                <span id="audioText" class="hidden sm:inline">Zvuk: Zap</span>
+            </button>
+            <button onclick="game.openRules()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-sm font-bold border border-slate-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-circle-question text-sky-400"></i>
+                <span class="hidden sm:inline">Pravidla</span>
+            </button>
+            <button onclick="game.toggleFullscreen()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl text-sm font-bold border border-slate-600 transition flex items-center gap-2">
+                <i class="fa-solid fa-expand text-emerald-400"></i>
+                <span class="hidden sm:inline">Celá obrazovka</span>
+            </button>
+            <button onclick="game.confirmReset()" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 rounded-xl text-sm font-bold shadow-lg transition flex items-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i>
+                <span class="hidden sm:inline">Nová hra</span>
+            </button>
+        </div>
+    </header>
+
+    <section class="max-w-7xl mx-auto w-full mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+        <!-- Team 1 -->
+        <div class="bg-slate-800/90 border-2 border-indigo-500/50 rounded-2xl p-3 flex flex-col justify-between shadow-xl relative overflow-hidden group">
+            <div class="flex justify-between items-center mb-1">
+                <input type="text" value="Tým 1" class="bg-transparent font-bold text-indigo-300 text-sm md:text-base focus:outline-none focus:border-b border-indigo-400 w-24 md:w-32" onchange="game.updateTeamName(0, this.value)">
+                <i class="fa-solid fa-user-astronaut text-indigo-400 text-lg"></i>
+            </div>
+            <div class="text-2xl md:text-3xl font-black text-white text-center py-1" id="score-0">0 b.</div>
+            <div class="flex justify-center gap-2 mt-1">
+                <button onclick="game.adjustScore(0, -100)" class="bg-slate-700 hover:bg-slate-600 text-xs px-2 py-1 rounded-lg text-slate-300 font-bold">-100</button>
+                <button onclick="game.adjustScore(0, 100)" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-2 py-1 rounded-lg text-white font-bold">+100</button>
+            </div>
+        </div>
+
+        <!-- Team 2 -->
+        <div class="bg-slate-800/90 border-2 border-emerald-500/50 rounded-2xl p-3 flex flex-col justify-between shadow-xl relative overflow-hidden group">
+            <div class="flex justify-between items-center mb-1">
+                <input type="text" value="Tým 2" class="bg-transparent font-bold text-emerald-300 text-sm md:text-base focus:outline-none focus:border-b border-emerald-400 w-24 md:w-32" onchange="game.updateTeamName(1, this.value)">
+                <i class="fa-solid fa-user-ninja text-emerald-400 text-lg"></i>
+            </div>
+            <div class="text-2xl md:text-3xl font-black text-white text-center py-1" id="score-1">0 b.</div>
+            <div class="flex justify-center gap-2 mt-1">
+                <button onclick="game.adjustScore(1, -100)" class="bg-slate-700 hover:bg-slate-600 text-xs px-2 py-1 rounded-lg text-slate-300 font-bold">-100</button>
+                <button onclick="game.adjustScore(1, 100)" class="bg-emerald-600 hover:bg-emerald-500 text-xs px-2 py-1 rounded-lg text-white font-bold">+100</button>
+            </div>
+        </div>
+
+        <!-- Team 3 -->
+        <div class="bg-slate-800/90 border-2 border-amber-500/50 rounded-2xl p-3 flex flex-col justify-between shadow-xl relative overflow-hidden group">
+            <div class="flex justify-between items-center mb-1">
+                <input type="text" value="Tým 3" class="bg-transparent font-bold text-amber-300 text-sm md:text-base focus:outline-none focus:border-b border-amber-400 w-24 md:w-32" onchange="game.updateTeamName(2, this.value)">
+                <i class="fa-solid fa-user-robot text-amber-400 text-lg"></i>
+            </div>
+            <div class="text-2xl md:text-3xl font-black text-white text-center py-1" id="score-2">0 b.</div>
+            <div class="flex justify-center gap-2 mt-1">
+                <button onclick="game.adjustScore(2, -100)" class="bg-slate-700 hover:bg-slate-600 text-xs px-2 py-1 rounded-lg text-slate-300 font-bold">-100</button>
+                <button onclick="game.adjustScore(2, 100)" class="bg-amber-600 hover:bg-amber-500 text-xs px-2 py-1 rounded-lg text-white font-bold">+100</button>
+            </div>
+        </div>
+
+        <!-- Team 4 -->
+        <div class="bg-slate-800/90 border-2 border-rose-500/50 rounded-2xl p-3 flex flex-col justify-between shadow-xl relative overflow-hidden group">
+            <div class="flex justify-between items-center mb-1">
+                <input type="text" value="Tým 4" class="bg-transparent font-bold text-rose-300 text-sm md:text-base focus:outline-none focus:border-b border-rose-400 w-24 md:w-32" onchange="game.updateTeamName(3, this.value)">
+                <i class="fa-solid fa-user-pirate text-rose-400 text-lg"></i>
+            </div>
+            <div class="text-2xl md:text-3xl font-black text-white text-center py-1" id="score-3">0 b.</div>
+            <div class="flex justify-center gap-2 mt-1">
+                <button onclick="game.adjustScore(3, -100)" class="bg-slate-700 hover:bg-slate-600 text-xs px-2 py-1 rounded-lg text-slate-300 font-bold">-100</button>
+                <button onclick="game.adjustScore(3, 100)" class="bg-rose-600 hover:bg-rose-500 text-xs px-2 py-1 rounded-lg text-white font-bold">+100</button>
+            </div>
+        </div>
+    </section>
+
+    <main class="max-w-7xl mx-auto w-full flex-1 overflow-x-auto pb-4">
+        <div class="min-w-[700px] grid grid-cols-5 gap-3 md:gap-4">
+            <!-- Category Headers will be rendered dynamically -->
+            <div id="category-headers" class="contents"></div>
+            <!-- Question Cells Grid -->
+            <div id="game-grid" class="contents"></div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto w-full mt-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2 border-t border-slate-800 pt-3">
+        <span><i class="fa-solid fa-graduation-cap text-sky-400 mr-1"></i> Angličtina pro základní školy (4. a 5. ročník)</span>
+        <span>Klikněte na otázku ➔ Odpovězte ➔ Druhým kliknutím zobrazte správnou odpověď!</span>
+    </footer>
+
+    <div id="questionModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border-2 border-amber-500/60 rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl modal-animate-in relative flex flex-col justify-between max-h-[90vh] overflow-y-auto">
+            
+            <!-- Close button -->
+            <button onclick="game.closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 w-10 h-10 rounded-full flex items-center justify-center text-xl transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <!-- Modal Header info -->
+            <div>
+                <div class="flex items-center gap-3 mb-4">
+                    <span id="modalCategory" class="bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 px-3 py-1 rounded-full text-xs md:text-sm font-bold uppercase tracking-wider">
+                        Kategorie
+                    </span>
+                    <span id="modalPoints" class="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs md:text-sm font-bold">
+                        100 bodů
+                    </span>
+                </div>
+
+                <!-- Main Interactive Card Area (Clickable) -->
+                <div id="cardInteractiveArea" onclick="game.handleCardClick()" class="cursor-pointer bg-slate-800/80 hover:bg-slate-800 border-2 border-slate-700 hover:border-amber-400/80 rounded-2xl p-6 md:p-8 transition text-center min-h-[220px] flex flex-col items-center justify-center relative group">
+                    
+                    <!-- Question Prompt / Content -->
+                    <div id="questionText" class="text-xl md:text-3xl font-bold text-white mb-4 leading-relaxed">
+                        Loading...
+                    </div>
+
+                    <!-- Additional Clues / Visual Prompts -->
+                    <div id="questionClue" class="text-base md:text-xl text-sky-300 font-semibold mb-2"></div>
+
+                    <!-- Click to reveal prompt banner -->
+                    <div id="clickPrompt" class="mt-4 inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 border border-amber-500/40 px-4 py-2 rounded-xl text-xs md:text-sm font-bold group-hover:scale-105 transition">
+                        <i class="fa-solid fa-hand-pointer text-amber-400 animate-bounce"></i>
+                        <span>Klikněte pro odhalení SPRÁVNÉ ODPOVĚDI</span>
+                    </div>
+
+                    <!-- Answer Box (Hidden initially) -->
+                    <div id="answerBox" class="hidden w-full mt-4 bg-emerald-950/70 border-2 border-emerald-500 rounded-2xl p-4 md:p-6 text-center transform transition duration-300">
+                        <div class="text-xs font-bold uppercase text-emerald-400 tracking-wider mb-1">
+                            <i class="fa-solid fa-circle-check mr-1"></i> Správná odpověď:
+                        </div>
+                        <div id="answerText" class="text-2xl md:text-4xl font-extrabold text-emerald-200">
+                            Answer
+                        </div>
+                        <div id="answerDetail" class="text-sm text-emerald-300 mt-2 font-medium italic"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Team Awarding Bar -->
+            <div id="teamAwardSection" class="mt-6 pt-4 border-t border-slate-800">
+                <div class="text-xs text-center font-bold text-slate-400 uppercase tracking-wider mb-3">
+                    Připsat body týmu:
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="game.awardPointsToTeam(0)" class="bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/50 font-bold py-2 px-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-plus text-xs"></i> <span class="team-0-name">Tým 1</span>
+                    </button>
+                    <button onclick="game.awardPointsToTeam(1)" class="bg-emerald-600/30 hover:bg-emerald-600 text-emerald-200 hover:text-white border border-emerald-500/50 font-bold py-2 px-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-plus text-xs"></i> <span class="team-1-name">Tým 2</span>
+                    </button>
+                    <button onclick="game.awardPointsToTeam(2)" class="bg-amber-600/30 hover:bg-amber-600 text-amber-200 hover:text-white border border-amber-500/50 font-bold py-2 px-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-plus text-xs"></i> <span class="team-2-name">Tým 3</span>
+                    </button>
+                    <button onclick="game.awardPointsToTeam(3)" class="bg-rose-600/30 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/50 font-bold py-2 px-3 rounded-xl text-xs md:text-sm transition flex items-center justify-center gap-1">
+                        <i class="fa-solid fa-plus text-xs"></i> <span class="team-3-name">Tým 4</span>
+                    </button>
+                </div>
+                <div class="mt-3 text-center">
+                    <button onclick="game.closeModal()" class="text-xs text-slate-400 hover:text-slate-200 underline">
+                        Zavřít bez připsání bodů
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-6 shadow-2xl modal-animate-in relative">
+            <button onclick="game.closeRules()" class="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center text-lg">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 class="text-2xl font-bold text-amber-400 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-book-open"></i> Jak hrát Riskuj!
+            </h2>
+            <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+                <p><strong>1. Výběr otázky:</strong> Tým si vybere kategorii a bodovou hodnotu (100 až 600 bodů).</p>
+                <p><strong>2. Zadání:</strong> Otázka se zobrazí na celé obrazovce. Žáci nahlas odpoví nebo doplní větu.</p>
+                <p><strong>3. Odhalení odpovedi:</strong> Učitel nebo žák klikne na kartu a odhalí zelené pole se správnou odpovědí.</p>
+                <p><strong>4. Bodování:</strong> Pokud tým odpoví správně, klikněte na tlačítko jeho týmu v dolní části karty a body se mu automaticky přičtou!</p>
+                <p class="bg-slate-800 p-3 rounded-xl text-sky-300 font-medium">💡 <em>Tip pro učitele:</em> Názvy týmů v horní liště můžete libovolně přejmenovat podle skupin ve třídě.</p>
+            </div>
+            <button onclick="game.closeRules()" class="mt-6 w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold py-2.5 rounded-xl transition">
+                Rozumím, jdeme hrát!
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Comprehensive Game Data Structure
+         * 5 Categories x 6 Difficulty Levels (100-600)
+         */
+        const GAME_DATA = [
+            {
+                id: "prepositions",
+                title: "Předložky místa",
+                subtitle: "in, on, under, behind...",
+                icon: "fa-location-dot",
+                color: "from-blue-600 to-indigo-700",
+                borderColor: "border-blue-500",
+                questions: [
+                    {
+                        points: 100,
+                        question: "Doplň předložku: <br><span class='text-amber-300'>The apple is ___ the box.</span>",
+                        clue: "📦 🍎 (Jablko je UVNITŘ krabice)",
+                        answer: "IN",
+                        detail: "The apple is IN the box."
+                    },
+                    {
+                        points: 200,
+                        question: "Doplň předložku: <br><span class='text-amber-300'>The book is ___ the table.</span>",
+                        clue: "🛋️ 📖 (Kniha je NA stole)",
+                        answer: "ON",
+                        detail: "The book is ON the table."
+                    },
+                    {
+                        points: 300,
+                        question: "Doplň předložku: <br><span class='text-amber-300'>The dog is sleeping ___ the bed.</span>",
+                        clue: "🛏️ 🐕 (Pes spí POD postelí)",
+                        answer: "UNDER",
+                        detail: "The dog is sleeping UNDER the bed."
+                    },
+                    {
+                        points: 400,
+                        question: "Doplň předložku: <br><span class='text-amber-300'>The boy is hiding ___ the tree.</span>",
+                        clue: "🌳 👦 (Chlapec se schovává ZA stromem)",
+                        answer: "BEHIND",
+                        detail: "The boy is hiding BEHIND the tree."
+                    },
+                    {
+                        points: 500,
+                        question: "Doplň předložku: <br><span class='text-amber-300'>The teacher stands ___ the blackboard.</span>",
+                        clue: "👩‍🏫 🏫 (Učitelka stojí PŘED tabulí)",
+                        answer: "IN FRONT OF",
+                        detail: "The teacher stands IN FRONT OF the blackboard."
+                    },
+                    {
+                        points: 600,
+                        question: "Doplň předložku: <br><span class='text-amber-300'>The hospital is ___ the supermarket.</span>",
+                        clue: "🏥 🏬 (Nemocnice je VEDLE supermarketu)",
+                        answer: "NEXT TO",
+                        detail: "The hospital is NEXT TO the supermarket."
+                    }
+                ]
+            },
+            {
+                id: "tobe",
+                title: "Sloveso TO BE",
+                subtitle: "am / is / are",
+                icon: "fa-person",
+                color: "from-emerald-600 to-teal-700",
+                borderColor: "border-emerald-500",
+                questions: [
+                    {
+                        points: 100,
+                        question: "Doplň správný tvar slovesa TO BE: <br><span class='text-amber-300'>I ___ a student.</span>",
+                        clue: "🙋 (Já jsem žák)",
+                        answer: "AM",
+                        detail: "I AM a student. / I'm a student."
+                    },
+                    {
+                        points: 200,
+                        question: "Doplň správný tvar slovesa TO BE: <br><span class='text-amber-300'>You ___ my best friend!</span>",
+                        clue: "🤝 (Ty jsi můj nejlepší kamarád)",
+                        answer: "ARE",
+                        detail: "You ARE my best friend!"
+                    },
+                    {
+                        points: 300,
+                        question: "Doplň správný tvar slovesa TO BE: <br><span class='text-amber-300'>She ___ ten years old.</span>",
+                        clue: "👧🎂 (Jí je 10 let)",
+                        answer: "IS",
+                        detail: "She IS ten years old."
+                    },
+                    {
+                        points: 400,
+                        question: "Doplň správný tvar slovesa TO BE: <br><span class='text-amber-300'>We ___ happy at school today.</span>",
+                        clue: "😀🏫 (My jsme dnes ve škole šťastní)",
+                        answer: "ARE",
+                        detail: "We ARE happy at school today."
+                    },
+                    {
+                        points: 500,
+                        question: "Doplň správný tvar slovesa TO BE: <br><span class='text-amber-300'>He ___ not at home, he ___ at work.</span>",
+                        clue: "👨‍💼 (On není doma, on je v práci)",
+                        answer: "IS / IS",
+                        detail: "He IS not at home, he IS at work."
+                    },
+                    {
+                        points: 600,
+                        question: "Doplň správný tvar slovesa TO BE: <br><span class='text-amber-300'>They ___ hungry and thirsty.</span>",
+                        clue: "🍕🥤 (Oni mají hlad a žízeň)",
+                        answer: "ARE",
+                        detail: "They ARE hungry and thirsty."
+                    }
+                ]
+            },
+            {
+                id: "present_simple",
+                title: "Přítomný prostý",
+                subtitle: "Osoba + sloveso (-s)",
+                icon: "fa-clock",
+                color: "from-amber-600 to-orange-700",
+                borderColor: "border-amber-500",
+                questions: [
+                    {
+                        points: 100,
+                        question: "Doplň správný tvar slovesa (PLAY): <br><span class='text-amber-300'>She ___ tennis every Sunday.</span>",
+                        clue: "🎾 (Ona hraje tenis)",
+                        answer: "plays",
+                        detail: "Celá věta: She PLAYS tennis every Sunday."
+                    },
+                    {
+                        points: 200,
+                        question: "Doplň správný tvar slovesa (COOK): <br><span class='text-amber-300'>He ___ delicious pizza.</span>",
+                        clue: "👨‍🍳 (On vaří/peče víkendovou pizzu)",
+                        answer: "cooks",
+                        detail: "Celá věta: He COOKS delicious pizza."
+                    },
+                    {
+                        points: 300,
+                        question: "Doplň správný tvar slovesa (RUN): <br><span class='text-amber-300'>You ___ very fast!</span>",
+                        clue: "🏃 (Ty běháš velmi rychle)",
+                        answer: "run",
+                        detail: "Celá věta: You RUN very fast!"
+                    },
+                    {
+                        points: 400,
+                        question: "Doplň správný tvar slovesa (WATCH): <br><span class='text-amber-300'>They ___ TV in the evening.</span>",
+                        clue: "📺 (Oni se večer dívají na televizi)",
+                        answer: "watch",
+                        detail: "Celá věta: They WATCH TV in the evening."
+                    },
+                    {
+                        points: 500,
+                        question: "Doplň správný tvar slovesa (SLEEP): <br><span class='text-amber-300'>The cat ___ on the sofa.</span>",
+                        clue: "🐱💤 (Kočka spí na pohovce)",
+                        answer: "sleeps",
+                        detail: "Celá věta: The cat SLEEPS on the sofa."
+                    },
+                    {
+                        points: 600,
+                        question: "Doplň správný tvar slovesa (GO): <br><span class='text-amber-300'>My brother ___ to school by bus.</span>",
+                        clue: "🚌 (Můj bratr jezdí do školy autobusem - pozor na koncovku!)",
+                        answer: "goes",
+                        detail: "Celá věta: My brother GOES to school by bus."
+                    }
+                ]
+            },
+            {
+                id: "adverbs",
+                title: "Časové výrazy",
+                subtitle: "Seřaď: méně časté ➔ častější",
+                icon: "fa-calendar-days",
+                color: "from-purple-600 to-pink-700",
+                borderColor: "border-purple-500",
+                questions: [
+                    {
+                        points: 100,
+                        question: "Seřaď výrazy od NEJMÉNĚ po NEJVÍCE často: <br><span class='text-amber-300'>often - never - always</span>",
+                        clue: "📊 0% ➔ 70% ➔ 100%",
+                        answer: "never ➔ often ➔ always",
+                        detail: "nikdy (0%) ➔ často (70%) ➔ vždy (100%)"
+                    },
+                    {
+                        points: 200,
+                        question: "Seřaď výrazy od NEJMÉNĚ po NEJVÍCE často: <br><span class='text-amber-300'>sometimes - always - never</span>",
+                        clue: "📊 0% ➔ 50% ➔ 100%",
+                        answer: "never ➔ sometimes ➔ always",
+                        detail: "nikdy (0%) ➔ někdy (50%) ➔ vždy (100%)"
+                    },
+                    {
+                        points: 300,
+                        question: "Seřaď výrazy od NEJMÉNĚ po NEJVÍCE často: <br><span class='text-amber-300'>usually - never - sometimes</span>",
+                        clue: "📊 0% ➔ 50% ➔ 80%",
+                        answer: "never ➔ sometimes ➔ usually",
+                        detail: "nikdy (0%) ➔ někdy (50%) ➔ obvykle (80%)"
+                    },
+                    {
+                        points: 400,
+                        question: "Seřaď výrazy od NEJMÉNĚ po NEJVÍCE často: <br><span class='text-amber-300'>always - rarely - often</span>",
+                        clue: "📊 10% ➔ 70% ➔ 100%",
+                        answer: "rarely ➔ often ➔ always",
+                        detail: "zřídka (10%) ➔ často (70%) ➔ vždy (100%)"
+                    },
+                    {
+                        points: 500,
+                        question: "Seřaď výrazy od NEJMÉNĚ po NEJVÍCE často: <br><span class='text-amber-300'>often - sometimes - usually</span>",
+                        clue: "📊 50% ➔ 70% ➔ 85%",
+                        answer: "sometimes ➔ often ➔ usually",
+                        detail: "někdy (50%) ➔ často (70%) ➔ obvykle (85%)"
+                    },
+                    {
+                        points: 600,
+                        question: "Seřaď VŠECHNY 4 výrazy od NEJMÉNĚ po NEJVÍCE často: <br><span class='text-amber-300'>always - never - usually - sometimes</span>",
+                        clue: "📊 0% ➔ 50% ➔ 80% ➔ 100%",
+                        answer: "never ➔ sometimes ➔ usually ➔ always",
+                        detail: "never (0%) ➔ sometimes (50%) ➔ usually (80%) ➔ always (100%)"
+                    }
+                ]
+            },
+            {
+                id: "jobs",
+                title: "Poznej povolání",
+                subtitle: "Uhodni profesi podle nápovědy",
+                icon: "fa-briefcase",
+                color: "from-rose-600 to-red-700",
+                borderColor: "border-rose-500",
+                questions: [
+                    {
+                        points: 100,
+                        question: "Uhodni povolání podle 3 nápověd: <br><span class='text-amber-300'>💧 Water &nbsp;|&nbsp; 🥄 Wooden spoon &nbsp;|&nbsp; 🌾 Flour</span>",
+                        clue: "Poznáš, kdo pracuje s těmito věcmi?",
+                        answer: "COOK / CHEF",
+                        detail: "Kuchař / Kuchařka (Cook / Chef)"
+                    },
+                    {
+                        points: 200,
+                        question: "Uhodni povolání podle 3 nápověd: <br><span class='text-amber-300'>🩺 Stethoscope &nbsp;|&nbsp; 🏥 Hospital &nbsp;|&nbsp; 💊 Medicine</span>",
+                        clue: "Kdo léčí nemocné lidi?",
+                        answer: "DOCTOR",
+                        detail: "Lékař / Doktorka (Doctor)"
+                    },
+                    {
+                        points: 300,
+                        question: "Uhodni povolání podle 3 nápověd: <br><span class='text-amber-300'>🚒 Red truck &nbsp;|&nbsp; 🧯 Fire extinguisher &nbsp;|&nbsp; 💧 Hose</span>",
+                        clue: "Kdo hasí požáry?",
+                        answer: "FIREFIGHTER",
+                        detail: "Hasič (Firefighter)"
+                    },
+                    {
+                        points: 400,
+                        question: "Uhodni povolání podle 3 nápověd: <br><span class='text-amber-300'>✏️ Chalk / Markers &nbsp;|&nbsp; 🏫 School &nbsp;|&nbsp; 📚 Books</span>",
+                        clue: "Kdo učí děti ve škole?",
+                        answer: "TEACHER",
+                        detail: "Učitel / Učitelka (Teacher)"
+                    },
+                    {
+                        points: 500,
+                        question: "Uhodni povolání podle 3 nápověd: <br><span class='text-amber-300'>⚽ Ball &nbsp;|&nbsp; 🟨 Yellow card &nbsp;|&nbsp; 📣 Whistle</span>",
+                        clue: "Kdo pískat zápas na hřišti nebo hraje fotbal?",
+                        answer: "REFEREE / FOOTBALLER",
+                        detail: "Rozhodčí (Referee) nebo Fotbalista (Footballer)"
+                    },
+                    {
+                        points: 600,
+                        question: "Uhodni povolání podle 3 nápověd: <br><span class='text-amber-300'>✂️ Scissors &nbsp;|&nbsp; 💈 Comb &nbsp;|&nbsp; 🪞 Mirror</span>",
+                        clue: "Kdo stříhá a upravuje vlasy?",
+                        answer: "HAIRDRESSER / BARBER",
+                        detail: "Kadeřník / Kadeřnice (Hairdresser / Barber)"
+                    }
+                ]
+            }
+        ];
+
+        /**
+         * Sound Synth Engine using Web Audio API
+         */
+        class SoundEngine {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+            }
+
+            playClick() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playReveal() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(400, now + 0.08);
+                osc.frequency.setValueAtTime(600, now + 0.16);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+
+            playPoints() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 Fanfare
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    const startTime = this.ctx.currentTime + (idx * 0.07);
+
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+
+                    gain.gain.setValueAtTime(0.2, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.2);
+                });
+            }
+        }
+
+        class RiskujGame {
+            constructor() {
+                this.sound = new SoundEngine();
+                this.scores = [0, 0, 0, 0];
+                this.teamNames = ["Tým 1", "Tým 2", "Tým 3", "Tým 4"];
+                this.playedQuestions = new Set(); // Stores "catIdx-qIdx"
+                this.activeQuestion = null; // { catIdx, qIdx, data }
+                this.isAnswerRevealed = false;
+
+                this.initUI();
+            }
+
+            initUI() {
+                this.renderCategories();
+                this.renderGrid();
+                this.updateScoreboard();
+
+                // Close modal on Escape key
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.closeModal();
+                });
+            }
+
+            renderCategories() {
+                const headerContainer = document.getElementById('category-headers');
+                headerContainer.innerHTML = GAME_DATA.map(cat => `
+                    <div class="bg-gradient-to-b ${cat.color} p-3 md:p-4 rounded-2xl border-2 ${cat.borderColor} shadow-xl flex flex-col items-center justify-center text-center">
+                        <i class="fa-solid ${cat.icon} text-xl md:text-2xl mb-1 text-amber-300"></i>
+                        <h2 class="font-extrabold text-sm md:text-base leading-tight">${cat.title}</h2>
+                        <span class="text-[10px] md:text-xs text-slate-200 opacity-80 mt-0.5 font-medium">${cat.subtitle}</span>
+                    </div>
+                `).join('');
+            }
+
+            renderGrid() {
+                const gridContainer = document.getElementById('game-grid');
+                let html = '';
+
+                // 6 rows (100 to 600 points)
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < GAME_DATA.length; col++) {
+                        const q = GAME_DATA[col].questions[row];
+                        const qKey = `${col}-${row}`;
+                        const isPlayed = this.playedQuestions.has(qKey);
+
+                        html += `
+                            <button 
+                                onclick="game.openQuestion(${col}, ${row})" 
+                                class="risk-card ${isPlayed ? 'played' : 'bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 hover:border-amber-400 text-amber-400'} 
+                                text-2xl md:text-3xl font-black py-4 md:py-6 rounded-2xl flex items-center justify-center transition"
+                                ${isPlayed ? 'disabled' : ''}
+                                id="btn-${qKey}"
+                            >
+                                ${isPlayed ? '<i class="fa-solid fa-check text-slate-500 text-xl"></i>' : q.points}
+                            </button>
+                        `;
+                    }
+                }
+
+                gridContainer.innerHTML = html;
+            }
+
+            openQuestion(catIdx, qIdx) {
+                const qKey = `${catIdx}-${qIdx}`;
+                if (this.playedQuestions.has(qKey)) return;
+
+                this.sound.playClick();
+                const category = GAME_DATA[catIdx];
+                const question = category.questions[qIdx];
+
+                this.activeQuestion = { catIdx, qIdx, key: qKey, points: question.points, data: question };
+                this.isAnswerRevealed = false;
+
+                // Set UI elements
+                document.getElementById('modalCategory').innerText = category.title;
+                document.getElementById('modalPoints').innerText = `${question.points} bodů`;
+                document.getElementById('questionText').innerHTML = question.question;
+                document.getElementById('questionClue').innerHTML = question.clue ? question.clue : '';
+                
+                // Hide answer initially
+                document.getElementById('answerBox').classList.add('hidden');
+                document.getElementById('clickPrompt').classList.remove('hidden');
+
+                // Show modal
+                document.getElementById('questionModal').classList.remove('hidden');
+            }
+
+            handleCardClick() {
+                if (!this.isAnswerRevealed) {
+                    this.revealAnswer();
+                }
+            }
+
+            revealAnswer() {
+                if (!this.activeQuestion || this.isAnswerRevealed) return;
+
+                this.isAnswerRevealed = true;
+                this.sound.playReveal();
+
+                const q = this.activeQuestion.data;
+                document.getElementById('answerText').innerHTML = q.answer;
+                document.getElementById('answerDetail').innerHTML = q.detail || '';
+
+                // Toggle visibility with smooth animation
+                document.getElementById('clickPrompt').classList.add('hidden');
+                const answerBox = document.getElementById('answerBox');
+                answerBox.classList.remove('hidden');
+            }
+
+            awardPointsToTeam(teamIdx) {
+                if (!this.activeQuestion) return;
+
+                this.sound.playPoints();
+                this.scores[teamIdx] += this.activeQuestion.points;
+                this.updateScoreboard();
+
+                // Mark question as played
+                this.playedQuestions.add(this.activeQuestion.key);
+                this.renderGrid();
+
+                this.closeModal();
+            }
+
+            closeModal() {
+                if (this.activeQuestion) {
+                    // Mark as played even if closed without points awarded
+                    this.playedQuestions.add(this.activeQuestion.key);
+                    this.renderGrid();
+                }
+                this.activeQuestion = null;
+                document.getElementById('questionModal').classList.add('hidden');
+            }
+
+            adjustScore(teamIdx, amount) {
+                this.sound.playClick();
+                this.scores[teamIdx] = Math.max(0, this.scores[teamIdx] + amount);
+                this.updateScoreboard();
+            }
+
+            updateTeamName(teamIdx, newName) {
+                const name = newName.trim() || `Tým ${teamIdx + 1}`;
+                this.teamNames[teamIdx] = name;
+                
+                // Update award buttons labels in modal
+                const btnElements = document.querySelectorAll(`.team-${teamIdx}-name`);
+                btnElements.forEach(el => el.innerText = name);
+            }
+
+            updateScoreboard() {
+                for (let i = 0; i < 4; i++) {
+                    const scoreEl = document.getElementById(`score-${i}`);
+                    if (scoreEl) {
+                        scoreEl.innerText = `${this.scores[i]} b.`;
+                    }
+                }
+            }
+
+            toggleAudio() {
+                this.sound.enabled = !this.sound.enabled;
+                const icon = document.getElementById('audioIcon');
+                const text = document.getElementById('audioText');
+
+                if (this.sound.enabled) {
+                    icon.className = "fa-solid fa-volume-high text-amber-400";
+                    text.innerText = "Zvuk: Zap";
+                    this.sound.playClick();
+                } else {
+                    icon.className = "fa-solid fa-volume-xmark text-slate-500";
+                    text.innerText = "Zvuk: Vyp";
+                }
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        console.log("Fullscreen error:", err);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            openRules() {
+                this.sound.playClick();
+                document.getElementById('rulesModal').classList.remove('hidden');
+            }
+
+            closeRules() {
+                document.getElementById('rulesModal').classList.add('hidden');
+            }
+
+            confirmReset() {
+                if (confirm("Opravdu chcete restartovat hru a vynulovat skóre?")) {
+                    this.scores = [0, 0, 0, 0];
+                    this.playedQuestions.clear();
+                    this.updateScoreboard();
+                    this.renderGrid();
+                    this.sound.playClick();
+                }
+            }
+        }
+
+        // Initialize game when page loads
+        let game;
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new RiskujGame();
+        });
+    </script>
+</body>
+</html>
